@@ -1,0 +1,70 @@
+            +----------------------+
+            |        OS 211        |
+            |  TASK 0: ALARMCLOCK  |
+            |    DESIGN DOCUMENT   |
+            +----------------------+/Users/ruxi/Desktop/design_doc.txt
+            
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, or notes for the
+>> markers, please give them here.
+
+>> Please cite any offline or online sources you consulted while preparing your 
+>> submission, other than the Pintos documentation, course text, lecture notes 
+>> and course staff.
+
+                 ALARM CLOCK
+                 ===========
+
+---- DATA STRUCTURES ----
+
+>> A1: (2 marks) 
+>> Copy here the declaration of each new or changed `struct' or `struct' member,
+>> global or static variable, `typedef', or enumeration. 
+>> Identify the purpose of each in roughly 25 words.
+
+static struct list st;	//list with all threads which are sleeping
+struct list_elem st_elem; // List of sleeping_threads's element
+struct semaphore timer;   // Semaphore for controlling the sleeping threads
+int time_to_wake_up;      //tick value when thread should wake up
+
+---- ALGORITHMS ----
+
+>> A2: (2 marks)
+>> Briefly describe what happens in a call to timer_sleep(), including the 
+>> actions performed by the timer interrupt handler on each timer tick.
+
+In timer_sleep I firstly check if ticks is a positive number because if it is not the current thread doesn't need to sleep.
+If the number of ticks > 0, I temporarily disable interrupts in order to block and add the thread to the list of sleeping threads using a semaphore. Then I set the value of the threads time to wake up. Lastly, I add the current thread into the list of sleeping threads by order of smallest wake up time.
+
+timer_interrupt firstly points to the current thread in the sleeping threads. Then, I iterate until all sleeping threads are running or until I encounter a thread that should still be sleeping. The list of sleeping threads is ordered, so if the current thread still needs to sleep, the ones remaining in the list must also need to. If the current thread doesn't need to sleep, then I unblock the thread and remove it from the list of sleeping threads.
+
+>> A3: (2 marks)
+>> What steps are taken to minimize the amount of time spent in the timer 
+>> interrupt handler?
+
+One great improvement is the usage of the ordered list. The global list of sleeping threads is ordered, with threads with the soonest wake-up times at the front.  The time interrupt handler only has to look at the head of the list, check to see if the wake-up time for that thread has passed, and if it has: wake up that thread, and traverse the list continuing to wake up threads until we see a thread whose wakeup time has not passed.
+
+---- SYNCHRONIZATION ----
+
+>> A4: (1 mark)
+>> How are race conditions avoided when multiple threads call timer_sleep() 
+>> simultaneously?
+
+Each time I insert into, or delete from my data structures, or traverse it, the interrupts are disabled.
+Therefore, reads/writes are atomic.  
+
+>> A5: (1 mark)
+>> How are race conditions avoided when a timer interrupt occurs during a call 
+>> to timer_sleep()?
+
+In the critical sections of timer_sleep, interrupts are disabled, so the timer interrupt can not occur. This means that no races between the 2 functions can occur.
+
+---- RATIONALE ----
+
+>> A6: (2 marks)
+>> Why did you choose this design? 
+>> In what ways is it superior to another design you considered?
+
+This seems the most straightforward and simple design for this. The algorithms are easy to understand and they made use of given resources as well. I also considered adding an extra status for the thread_sleeping, so when thread_sleep is run, thread will gain this status. But I decided to use semaphore as I never used it and I wanted to learn more about this.
